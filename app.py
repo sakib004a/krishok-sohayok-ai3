@@ -16,9 +16,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 
-# ==============================
-# CONFIGURATION
-# ==============================
+# ==========================================
+# 1. CONFIGURATION
+# ==========================================
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -53,11 +53,7 @@ engine = create_engine(
     )
 )
 
-DB = sessionmaker(
-    bind=engine,
-    expire_on_commit=False
-)
-
+DB = sessionmaker(bind=engine, expire_on_commit=False)
 Base = declarative_base()
 
 ai = genai.Client(
@@ -66,9 +62,9 @@ ai = genai.Client(
 )
 
 
-# ==============================
-# DATABASE TABLES
-# ==============================
+# ==========================================
+# 2. DATABASE
+# ==========================================
 
 class Analysis(Base):
     __tablename__ = "analyses"
@@ -106,75 +102,75 @@ class ChatMessage(Base):
 Base.metadata.create_all(engine)
 
 
-# ==============================
-# AI PROMPT
-# ==============================
+# ==========================================
+# 3. AGRICULTURE PROMPT
+# ==========================================
 
 PROMPT = """
-তুমি বাংলাদেশের কৃষকদের জন্য দায়িত্বশীল,
-বাস্তবমুখী কৃষি সহায়ক।
+তুমি বাংলাদেশের কৃষকদের জন্য একজন অভিজ্ঞ ও দায়িত্বশীল
+কৃষি বিশেষজ্ঞ।
 
-সহজ ও পরিষ্কার বাংলায় উত্তর দাও।
+তোমার কাজ হলো গাছের ছবি দেখে কৃষককে সরাসরি একটি
+পূর্ণাঙ্গ কৃষি রিপোর্ট দেওয়া।
 
-ছবিতে যা দেখা যাচ্ছে শুধু সেটিই লক্ষণ হিসেবে বলবে।
-অস্পষ্ট হলে তা স্পষ্ট করবে।
-রোগ নিশ্চিত না হলে সম্ভাব্য সমস্যা হিসেবে উল্লেখ করবে।
+গুরুত্বপূর্ণ নির্দেশনা:
 
-অবশ্যই নিচের ৬টি শিরোনামসহ পূর্ণাঙ্গ রিপোর্ট দেবে।
-কোনো শিরোনাম বাদ দেবে না।
+১. শুধু সহজ ও পরিষ্কার বাংলায় উত্তর দেবে।
+২. কোনো Checklist, Yes/No, grading, rubric,
+   heading verification বা নিজের কাজের মূল্যায়ন লিখবে না।
+৩. কোনো ইংরেজি নির্দেশনা বা meta-commentary দেবে না।
+৪. ছবিতে যা দেখা যাচ্ছে শুধু সেটিই দৃশ্যমান লক্ষণ হিসেবে বলবে।
+৫. রোগ নিশ্চিত না হলে সম্ভাব্য রোগ হিসেবে উল্লেখ করবে।
+৬. কোনো তথ্য কল্পনা করবে না।
+৭. প্রতিটি শিরোনামের নিচে বাস্তবসম্মত ব্যাখ্যা দেবে।
+
+নিচের ৬টি শিরোনাম ব্যবহার করে রিপোর্ট লিখবে:
 
 ### 🌱 গাছের অবস্থা
-গাছটি দেখতে কেমন এবং সামগ্রিক অবস্থা
-২-৩ বাক্যে বলবে।
+গাছের সামগ্রিক স্বাস্থ্য ও অবস্থা ব্যাখ্যা করো।
 
 ### 🔎 দৃশ্যমান লক্ষণ
-ছবিতে দেখা দাগ, রং পরিবর্তন,
-শুকিয়ে যাওয়া বা অন্য লক্ষণ নির্দিষ্ট করে বলবে।
+পাতা, ফুল, ফল ও কাণ্ডে ছবিতে দেখা লক্ষণগুলো বলো।
 
 ### 🦠 সম্ভাব্য সমস্যা
-সম্ভাব্য রোগ, পোকা বা পুষ্টির সমস্যা বলবে।
-নিশ্চিত না হলে একাধিক সম্ভাবনা ও অনিশ্চয়তা জানাবে।
+সম্ভাব্য রোগ, পোকামাকড় বা পুষ্টির ঘাটতি ব্যাখ্যা করো।
+নিশ্চিত না হলে সম্ভাব্য কারণ হিসেবে উল্লেখ করো।
 
 ### 💡 সম্ভাব্য কারণ
-সম্ভাব্য কারণগুলো সংক্ষেপে ব্যাখ্যা করবে।
+সমস্যার সম্ভাব্য কারণগুলো ব্যাখ্যা করো।
 
 ### 🧑‍🌾 এখন কী করবেন
-কৃষক আজ থেকেই করতে পারবেন এমন
-অন্তত ৩টি নিরাপদ, ধাপে ধাপে করণীয় দেবে।
+কৃষকের জন্য অন্তত ৩টি নিরাপদ ও বাস্তবসম্মত
+করণীয় নম্বর দিয়ে লেখো।
 
 ### 🛡️ প্রতিরোধ
-ভবিষ্যতে সমস্যা কমাতে অন্তত ২টি
-প্রতিরোধমূলক পরামর্শ দেবে।
+ভবিষ্যতে সমস্যা প্রতিরোধের অন্তত ২টি উপায় লেখো।
 
-যদি ছবির ভিত্তিতে রোগ নির্ণয় সম্ভব না হয়,
-তবুও নিরাপদ সাধারণ পরিচর্যার করণীয় দেবে।
-কোন অতিরিক্ত ছবি বা তথ্য দরকার তা বলবে।
+যদি ছবিতে রোগ বোঝা না যায়, তাহলে সেটি স্পষ্টভাবে জানাও।
+তারপর নিরাপদ সাধারণ পরিচর্যার পরামর্শ দাও।
 
 রাসায়নিকের নির্দিষ্ট ডোজ অনুমান করবে না।
-পণ্যের লেবেল ও স্থানীয় কৃষি কর্মকর্তার
-নির্দেশনা মানতে বলবে।
+প্রয়োজনে স্থানীয় কৃষি কর্মকর্তার পরামর্শ নিতে বলবে।
 
-এটি প্রাথমিক AI পরামর্শ,
-নিশ্চিত ল্যাব-পরীক্ষা নয়।
+শুধু চূড়ান্ত কৃষি রিপোর্ট লিখবে।
 """
 
 
-# ==============================
-# USER ID
-# ==============================
+# ==========================================
+# 4. USER ID
+# ==========================================
 
 def uid(value):
     if isinstance(value, str) and 20 <= len(value) <= 80:
         return value
-
     return str(uuid.uuid4())
 
 
-# ==============================
-# GEMINI AI FUNCTION
-# ==============================
+# ==========================================
+# 5. GEMINI AI FUNCTION
+# ==========================================
 
-def call_ai(contents, max_tokens=900):
+def call_ai(contents, max_tokens=1000):
 
     models_to_try = [MODEL]
 
@@ -183,7 +179,7 @@ def call_ai(contents, max_tokens=900):
 
     last_error = None
 
-    for model_index, model_name in enumerate(models_to_try):
+    for index, model_name in enumerate(models_to_try):
 
         parts = []
 
@@ -207,7 +203,7 @@ def call_ai(contents, max_tokens=900):
             if parts:
                 return
 
-            yield "দুঃখিত, AI থেকে কোনো উত্তর পাওয়া যায়নি। আবার চেষ্টা করুন।"
+            yield "দুঃখিত, AI থেকে কোনো উত্তর পাওয়া যায়নি।"
             return
 
         except Exception as exc:
@@ -224,19 +220,63 @@ def call_ai(contents, max_tokens=900):
             if (
                 parts
                 or not temporary_error
-                or model_index == len(models_to_try) - 1
+                or index == len(models_to_try) - 1
             ):
                 raise
 
-            yield "⏳ মূল AI মডেল ব্যস্ত। বিকল্প মডেলে চেষ্টা করছি…"
+            yield (
+                "⏳ AI সার্ভার ব্যস্ত। "
+                "বিকল্প মডেলে চেষ্টা করছি..."
+            )
 
     if last_error:
         raise last_error
 
 
-# ==============================
-# IMAGE COMPRESSION
-# ==============================
+# ==========================================
+# 6. REPORT VALIDATION
+# ==========================================
+
+def report_is_valid(text):
+
+    if not text or len(text.strip()) < 250:
+        return False
+
+    lower = text.lower()
+
+    unwanted = [
+        "heading 1",
+        "heading 2",
+        "heading 3",
+        "heading 4",
+        "heading 5",
+        "heading 6",
+        "checklist",
+        "rubric",
+        "at least 2",
+        "at least 3",
+        "self-evaluation",
+        "heading verification"
+    ]
+
+    if any(word in lower for word in unwanted):
+        return False
+
+    required = [
+        "গাছের অবস্থা",
+        "দৃশ্যমান লক্ষণ",
+        "সম্ভাব্য সমস্যা",
+        "সম্ভাব্য কারণ",
+        "এখন কী করবেন",
+        "প্রতিরোধ"
+    ]
+
+    return all(word in text for word in required)
+
+
+# ==========================================
+# 7. IMAGE COMPRESSION
+# ==========================================
 
 def image_bytes(img):
 
@@ -252,9 +292,9 @@ def image_bytes(img):
     return buffer.getvalue()
 
 
-# ==============================
-# HISTORY
-# ==============================
+# ==========================================
+# 8. HISTORY
+# ==========================================
 
 def history_text(browser_id):
 
@@ -319,9 +359,9 @@ def choices(browser_id):
         db.close()
 
 
-# ==============================
-# PLANT IMAGE ANALYSIS
-# ==============================
+# ==========================================
+# 9. PLANT IMAGE ANALYSIS
+# ==========================================
 
 def analyze(img, browser_id):
 
@@ -330,12 +370,11 @@ def analyze(img, browser_id):
     if img is None:
 
         yield (
-            "⚠️ আগে গাছ, পাতা, ফুল বা ফলের ছবি দিন।",
+            "⚠️ আগে গাছের ছবি দিন।",
             None,
             history_text(browser_id),
             choices(browser_id)
         )
-
         return
 
     try:
@@ -353,24 +392,28 @@ def analyze(img, browser_id):
         old_choices = choices(browser_id)
 
         yield (
-            "⏳ ছবি বিশ্লেষণ করা হচ্ছে… অনুগ্রহ করে অপেক্ষা করুন।",
+            "⏳ ছবি বিশ্লেষণ করা হচ্ছে। অনুগ্রহ করে অপেক্ষা করুন...",
             None,
             old_history,
             old_choices
         )
 
-        final = ""
-
         prompt = (
             PROMPT
-            + "\nছবিটি দেখে উপরের সব শিরোনামে পূর্ণ রিপোর্ট দাও। "
-            + "বিশেষ করে 'এখন কী করবেন' অংশে কার্যকর করণীয় অবশ্যই লিখবে।"
+            + "\nসংযুক্ত ছবিটি বিশ্লেষণ করে ছয়টি শিরোনামে "
+            + "পূর্ণাঙ্গ কৃষি রিপোর্ট দাও। "
+            + "কোনো Checklist বা Yes/No উত্তর দেবে না।"
         )
 
-        for final in call_ai(
+        final = ""
+
+        # First attempt
+        for answer in call_ai(
             [prompt, api_image],
             1400
         ):
+
+            final = answer
 
             yield (
                 final,
@@ -379,6 +422,48 @@ def analyze(img, browser_id):
                 old_choices
             )
 
+        # Retry if report format is invalid
+        if not report_is_valid(final):
+
+            retry_prompt = (
+                PROMPT
+                + "\nআগের উত্তরটি সঠিক কৃষি রিপোর্ট ছিল না। "
+                + "এবার সরাসরি ছয়টি বাংলা শিরোনামে "
+                + "পূর্ণাঙ্গ কৃষি রিপোর্ট লেখো। "
+                + "কোনো Checklist বা Yes/No লিখবে না।"
+            )
+
+            final = ""
+
+            for answer in call_ai(
+                [retry_prompt, api_image],
+                1400
+            ):
+
+                final = answer
+
+                yield (
+                    final,
+                    None,
+                    old_history,
+                    old_choices
+                )
+
+        # Final validation
+        if not report_is_valid(final):
+
+            yield (
+                "### ⚠️ পূর্ণাঙ্গ রিপোর্ট পাওয়া যায়নি\n\n"
+                "AI সঠিক রিপোর্ট দিতে পারেনি। "
+                "আরেকটি পরিষ্কার ছবি দিয়ে আবার চেষ্টা করুন।",
+                None,
+                old_history,
+                old_choices
+            )
+
+            return
+
+        # Save valid report
         db = DB()
 
         try:
@@ -408,25 +493,17 @@ def analyze(img, browser_id):
     except Exception as e:
 
         yield (
-            f"""
-### ⚠️ বিশ্লেষণ সম্পন্ন হয়নি
-
-Gemini সার্ভার ব্যস্ত, নেটওয়ার্ক ধীর,
-অথবা API configuration-এ সমস্যা হতে পারে।
-
-কিছুক্ষণ পর আবার চেষ্টা করুন।
-
-`{str(e)[:300]}`
-""",
+            f"### ⚠️ বিশ্লেষণ সম্পন্ন হয়নি\n\n"
+            f"`{str(e)[:300]}`",
             None,
             history_text(browser_id),
             choices(browser_id)
         )
 
 
-# ==============================
-# CHAT HISTORY
-# ==============================
+# ==========================================
+# 10. CHAT HISTORY
+# ==========================================
 
 def recent_messages(
     db,
@@ -453,9 +530,9 @@ def recent_messages(
     )
 
 
-# ==============================
-# AI CHAT REPLY
-# ==============================
+# ==========================================
+# 11. AI CHAT REPLY
+# ==========================================
 
 def reply(message, bid, scope, aid=None):
 
@@ -470,7 +547,8 @@ def reply(message, bid, scope, aid=None):
 
         prompt = [
             PROMPT,
-            "বাংলাদেশের কৃষকের উপযোগী সংক্ষিপ্ত, বাস্তবসম্মত বাংলায় উত্তর দাও।"
+            "বাংলাদেশের কৃষকের উপযোগী সহজ, "
+            "সংক্ষিপ্ত ও বাস্তবসম্মত বাংলায় উত্তর দাও।"
         ]
 
         if scope == "analysis" and aid:
@@ -492,7 +570,9 @@ def reply(message, bid, scope, aid=None):
 
         prompt.append("আগের কথোপকথন:")
 
-        for m in recent_messages(db, bid, scope, aid):
+        for m in recent_messages(
+            db, bid, scope, aid
+        ):
 
             prompt.append(
                 ("কৃষক: " if m.role == "user" else "সহায়ক: ")
@@ -545,9 +625,9 @@ def reply(message, bid, scope, aid=None):
         db.close()
 
 
-# ==============================
-# GENERAL CHAT
-# ==============================
+# ==========================================
+# 12. GENERAL CHAT
+# ==========================================
 
 def general_chat(message, bid, chat):
 
@@ -567,9 +647,9 @@ def general_chat(message, bid, chat):
     return chat, ""
 
 
-# ==============================
-# REPORT CHAT
-# ==============================
+# ==========================================
+# 13. REPORT CHAT
+# ==========================================
 
 def report_chat(message, bid, aid, chat):
 
@@ -579,8 +659,11 @@ def report_chat(message, bid, aid, chat):
 
         chat.append({
             "role": "assistant",
-            "content": "আগে ছবি বিশ্লেষণ করুন অথবা History থেকে রিপোর্ট খুলুন।"
-        })
+            "content": (
+                "আগে ছবি বিশ্লেষণ করুন অথবা "
+                "History থেকে রিপোর্ট খুলুন।"
+            )
+        )
 
         return chat, ""
 
@@ -599,9 +682,9 @@ def report_chat(message, bid, aid, chat):
     return chat, ""
 
 
-# ==============================
-# LOAD GENERAL CHAT
-# ==============================
+# ==========================================
+# 14. LOAD GENERAL CHAT
+# ==========================================
 
 def load_general(bid):
 
@@ -626,9 +709,9 @@ def load_general(bid):
         db.close()
 
 
-# ==============================
-# CLEAR CHAT
-# ==============================
+# ==========================================
+# 15. CLEAR GENERAL CHAT
+# ==========================================
 
 def clear_general(bid):
 
@@ -653,9 +736,9 @@ def clear_general(bid):
     return []
 
 
-# ==============================
-# OPEN OLD REPORT
-# ==============================
+# ==========================================
+# 16. OPEN OLD REPORT
+# ==========================================
 
 def open_report(selected, bid):
 
@@ -685,9 +768,9 @@ def open_report(selected, bid):
         db.close()
 
 
-# ==============================
-# CSS DESIGN
-# ==============================
+# ==========================================
+# 17. CSS DESIGN
+# ==========================================
 
 CSS = r'''
 :root{
@@ -807,9 +890,9 @@ label,.prose,.markdown{
 '''
 
 
-# ==============================
-# GRADIO APPLICATION
-# ==============================
+# ==========================================
+# 18. GRADIO APPLICATION
+# ==========================================
 
 with gr.Blocks(
     title="কৃষক সহায়ক | AI কৃষি সহকারী"
@@ -849,7 +932,7 @@ with gr.Blocks(
 
     with gr.Tabs():
 
-        # PHOTO ANALYSIS TAB
+        # PHOTO ANALYSIS
 
         with gr.Tab("📸 ছবি দিয়ে পরীক্ষা"):
 
@@ -924,7 +1007,7 @@ with gr.Blocks(
                             scale=1
                         )
 
-        # GENERAL CHAT TAB
+        # GENERAL AGRICULTURE CHAT
 
         with gr.Tab("🌿 কৃষি চ্যাট"):
 
@@ -959,7 +1042,7 @@ with gr.Blocks(
 
             gclear = gr.Button("চ্যাট মুছুন")
 
-        # REPORT HISTORY TAB
+        # REPORT HISTORY
 
         with gr.Tab("🗂️ আমার রিপোর্ট"):
 
@@ -998,7 +1081,10 @@ with gr.Blocks(
         '</div>'
     )
 
-    # BUTTON EVENTS
+
+    # ======================================
+    # 19. BUTTON EVENTS
+    # ======================================
 
     scan.click(
         analyze,
@@ -1067,9 +1153,9 @@ with gr.Blocks(
     )
 
 
-# ==============================
-# START SERVER
-# ==============================
+# ==========================================
+# 20. START SERVER
+# ==========================================
 
 if __name__ == "__main__":
 
